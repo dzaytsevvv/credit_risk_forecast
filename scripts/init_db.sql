@@ -1,0 +1,23 @@
+CREATE SCHEMA IF NOT EXISTS mlflow;
+
+CREATE TABLE IF NOT EXISTS predictions (
+    id BIGSERIAL PRIMARY KEY,
+    run_ts TIMESTAMP NOT NULL DEFAULT NOW(),
+    model_name TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    month DATE NOT NULL,
+    y_true DOUBLE PRECISION,
+    y_pred DOUBLE PRECISION NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS model_metrics (
+    id BIGSERIAL PRIMARY KEY,
+    run_ts TIMESTAMP NOT NULL DEFAULT NOW(),
+    model_name TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    split_name TEXT NOT NULL,
+    mae DOUBLE PRECISION,
+    rmse DOUBLE PRECISION,
+    mape DOUBLE PRECISION,
+    r2 DOUBLE PRECISION
+);

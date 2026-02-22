@@ -1,0 +1,63 @@
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+.envrc
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Packaging / build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Test / coverage / typecheck caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Jupyter / IPython
+.ipynb_checkpoints/
+.python_history
+
+# Logs / outputs
+*.log
+logs/
+outputs/
+artifacts/
+
+# ML / experiment tracking
+mlruns/
+wandb/
+
+# Data (keep generated/derived data only if you want it versioned)
+data/raw/
+data/external/
+data/interim/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+.vscode/
+.idea/
+*.code-workspace
+
