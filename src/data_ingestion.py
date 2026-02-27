@@ -5,7 +5,11 @@ LC_USECOLS = ["issue_d", "loan_amnt", "loan_status"]
 
 def read_lendingclub(path: str) -> pd.DataFrame:
     # pandas сам понимает .csv.gz
-    return pd.read_csv(path, usecols=LC_USECOLS, low_memory=False)
+    df = pd.read_csv(path, low_memory=False)
+    missing = [c for c in LC_USECOLS if c not in df.columns]
+    if missing:
+        raise ValueError(f"Input dataset is missing required columns: {missing}")
+    return df[LC_USECOLS].copy()
 
 BAD_STATUSES = {
     "Late (16-30 days)",
