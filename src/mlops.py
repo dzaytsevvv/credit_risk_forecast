@@ -12,6 +12,9 @@ from feature_engineering import make_features
 from modeling import train_all_models
 from inference import predict
 
+
+TARGET_COLS = ["month", "D_t", "S_t"]
+
 def path_series(out_dir: str) -> str:
     return os.path.join(out_dir, "monthly_series.csv")
 
@@ -87,7 +90,7 @@ def cmd_score(args):
 
     # test часть такая же, как в train_all_models
     test_df = feats[feats["month"] >= pd.to_datetime("2017-01-01")].copy()
-    feature_cols = [c for c in feats.columns if c not in ["month", "P_t", "D_t", "S_t"]]
+    feature_cols = [c for c in feats.columns if c not in TARGET_COLS]
 
     pred_df = predict(model, test_df, feature_cols)
     pred_df["model_name"] = model_name

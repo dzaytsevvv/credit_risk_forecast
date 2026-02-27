@@ -12,11 +12,13 @@ def make_features(series: pd.DataFrame, target_col: str = "D_t") -> pd.DataFrame
 
     for l in [1, 2, 3, 6, 12]:
         df[f"{target_col}_lag{l}"] = df[target_col].shift(l)
+        df[f"P_t_lag{l}"] = df["P_t"].shift(l)
 
     for w in [3, 6, 12]:
         df[f"{target_col}_ma{w}"] = df[target_col].shift(1).rolling(w).mean()
         df[f"{target_col}_std{w}"] = df[target_col].shift(1).rolling(w).std()
+        df[f"P_t_ma{w}"] = df["P_t"].shift(1).rolling(w).mean()
 
-    feature_cols = [c for c in df.columns if c not in ["month", "P_t", "D_t", "S_t"]]
+    feature_cols = [c for c in df.columns if c not in ["month", "D_t", "S_t"]]
     df = df.dropna(subset=feature_cols).reset_index(drop=True)
     return df
