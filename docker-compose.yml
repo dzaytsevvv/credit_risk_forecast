@@ -1,0 +1,101 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: loanml_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mlops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mlops}
+      POSTGRES_DB: ${POSTGRES_DB:-mlops}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mlops} -d ${POSTGRES_DB:-mlops}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  db_init:
+    image: postgres:15
+    container_name: loanml_db_init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-mlops}
+    command:
+      - bash
+      - -lc
+      - >
+          set -euo pipefail;
+          psql -h postgres -U ${POSTGRES_USER:-mlops} -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='airflow'" | grep -q 1
+          || psql -h postgres -U ${POSTGRES_USER:-mlops} -d postgres -c "CREATE DATABASE airflow";
+          psql -h postgres -U ${POSTGRES_USER:-mlops} -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='mlflow'" | grep -q 1
+          || psql -h postgres -U ${POSTGRES_USER:-mlops} -d postgres -c "CREATE DATABASE mlflow";
+    restart: "no"
+
+  mlflow:
+    build:
+      context: ./docker/mlflow
+    image: loanml_mlflow:local
+    container_name: loanml_mlflow
+    depends_on:
+      db_init:
+        condition: service_completed_successfully
+    environment:
+      MLFLOW_BACKEND_STORE_URI: postgresql://${POSTGRES_USER:-mlops}:${POSTGRES_PASSWORD:-mlops}@postgres:5432/mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+    command:
+      - sh
+      - -c
+      - >
+          mlflow server
+          --host 0.0.0.0
+          --port 5000
+          --backend-store-uri $${MLFLOW_BACKEND_STORE_URI}
+          --default-artifact-root /mlruns
+    restart: unless-stopped
+
+  airflow:
+    build:
+      context: ./docker/airflow
+    image: loanml_airflow:local
+    container_name: loanml_airflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db_init:
+        condition: service_completed_successfully
+      mlflow:
+        condition: service_started
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-mlops}:${POSTGRES_PASSWORD:-mlops}@postgres:5432/airflow
+
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      PROJECT_ROOT: /opt/airflow/project
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./src:/opt/airflow/project/src
+      - ./configs:/opt/airflow/project/configs
+      - ./data:/opt/airflow/project/data
+      - ./mlruns:/mlruns
+    command: >
+      bash -lc "
+      airflow db migrate &&
+      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true &&
+      airflow webserver & airflow scheduler
+      "
+    restart: unless-stopped
+
+volumes:
+  pg_data:

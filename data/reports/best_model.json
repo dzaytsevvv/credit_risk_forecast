@@ -1,0 +1,5 @@
+{
+  "best_model": "lgbm",
+  "best_by": "valid_pr_auc",
+  "best_score": 0.9178684680631387
+}

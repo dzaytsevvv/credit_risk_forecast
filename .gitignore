@@ -1,0 +1,25 @@
+# data
+data/raw/
+data/processed/
+data/artifacts/
+
+# большие форматы
+*.csv
+*.parquet
+*.joblib
+*.pkl
+*.bin
+*.pt
+*.ckpt
+
+# mlflow
+mlruns/
+
+# python
+__pycache__/
+*.py[cod]
+
+# env files
+.env
+.env.*
+!.env.example

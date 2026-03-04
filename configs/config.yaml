@@ -1,0 +1,22 @@
+experiment:
+  name: "lending_club_simple_pg"
+
+data:
+  raw_csv_path: "data/raw/lending_club.csv"
+  issue_date_col: "issue_d"
+  loan_status_col: "loan_status"
+
+split:
+  train_end: "2017-12-01"
+  valid_end: "2018-12-01"
+
+model:
+  random_state: 42
+
+  lgbm_params:
+    n_estimators: 2000
+    learning_rate: 0.03
+    num_leaves: 63
+    min_data_in_leaf: 200
+    subsample: 0.8
+    colsample_bytree: 0.8
