@@ -5,6 +5,8 @@ data:
   raw_csv_path: "data/raw/lending_club.csv"
   issue_date_col: "issue_d"
   loan_status_col: "loan_status"
+  chunksize: 100000
+  max_rows: 120000
 
 split:
   train_end: "2017-12-01"

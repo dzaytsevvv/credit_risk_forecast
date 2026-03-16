@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mlops}
       POSTGRES_DB: ${POSTGRES_DB:-mlops}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -47,7 +47,7 @@ services:
     environment:
       MLFLOW_BACKEND_STORE_URI: postgresql://${POSTGRES_USER:-mlops}:${POSTGRES_PASSWORD:-mlops}@postgres:5432/mlflow
     ports:
-      - "5000:5000"
+      - "${MLFLOW_PORT:-5001}:5000"
     volumes:
       - ./mlruns:/mlruns
     command:
@@ -82,7 +82,7 @@ services:
       MLFLOW_TRACKING_URI: http://mlflow:5000
       PROJECT_ROOT: /opt/airflow/project
     ports:
-      - "8080:8080"
+      - "${AIRFLOW_PORT:-8080}:8080"
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./src:/opt/airflow/project/src

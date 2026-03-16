@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import pandas as pd
+import numpy as np
 from typing import Any, Dict
 
 from common import ensure_dir, resolve_path
@@ -22,10 +23,51 @@ LEAKAGE_PATTERNS = [
 
 
 def parse_issue_d(s: pd.Series) -> pd.Series:
-    dt = pd.to_datetime(s, errors="coerce", infer_datetime_format=True)
+    dt = pd.to_datetime(s, errors="coerce")
     if dt.isna().mean() > 0.2:
         dt = pd.to_datetime(s, format="%b-%Y", errors="coerce")
     return dt.dt.to_period("M").dt.to_timestamp()
+
+
+def _read_csv_streaming(cfg: Dict[str, Any], raw_path: str, status_col: str, issue_col: str) -> pd.DataFrame:
+    data_cfg = cfg.get("data", {})
+    chunksize = int(data_cfg.get("chunksize", 100_000))
+    max_rows = int(data_cfg.get("max_rows", 120_000))
+    seed = int(cfg.get("model", {}).get("random_state", 42))
+    rng = np.random.default_rng(seed)
+
+    parts = []
+    kept = 0
+    required_cols_checked = False
+
+    for chunk in pd.read_csv(raw_path, low_memory=True, chunksize=chunksize):
+        if not required_cols_checked:
+            if issue_col not in chunk.columns:
+                raise ValueError(f"В датасете нет колонки {issue_col}")
+            if status_col not in chunk.columns:
+                raise ValueError(f"В датасете нет колонки {status_col}")
+            required_cols_checked = True
+
+        chunk = chunk[chunk[status_col].isin(DEFAULT_STATUSES | GOOD_STATUSES)].copy()
+        if chunk.empty:
+            continue
+
+        left = max_rows - kept
+        if left <= 0:
+            break
+        if len(chunk) > left:
+            idx = rng.choice(len(chunk), size=left, replace=False)
+            chunk = chunk.iloc[idx].copy()
+
+        parts.append(chunk)
+        kept += len(chunk)
+
+        if kept >= max_rows:
+            break
+
+    if not parts:
+        raise ValueError("После фильтрации loan_status не осталось строк. Проверь входной CSV.")
+    return pd.concat(parts, ignore_index=True)
 
 
 def preprocess_and_split(cfg: Dict[str, Any]) -> None:
@@ -39,12 +81,7 @@ def preprocess_and_split(cfg: Dict[str, Any]) -> None:
             f"Скачай CSV с Kaggle и положи в data/raw/lending_club.csv (или измени путь в config.yaml)."
         )
 
-    df = pd.read_csv(raw_path, low_memory=False)
-
-    if issue_col not in df.columns:
-        raise ValueError(f"В датасете нет колонки {issue_col}")
-    if status_col not in df.columns:
-        raise ValueError(f"В датасете нет колонки {status_col}")
+    df = _read_csv_streaming(cfg, raw_path, status_col, issue_col)
 
     df[issue_col] = parse_issue_d(df[issue_col])
 

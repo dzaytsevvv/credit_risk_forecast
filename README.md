@@ -12,7 +12,17 @@ Airflow запускает простой ML-пайплайн:
 
 (или поменяй путь в configs/config.yaml)
 
+По умолчанию `prep_data` читает CSV потоково и берет до `data.max_rows` строк
+(параметры `data.chunksize` и `data.max_rows` в `configs/config.yaml`), чтобы не падать по OOM в Airflow контейнере.
+
 ## Запуск
 ```bash
 cp .env.example .env
 docker compose up -d
+```
+
+По умолчанию сервисы доступны на:
+- Airflow: `http://localhost:8080` (логин/пароль: `admin/admin`)
+- MLflow: `http://localhost:5001`
+
+Если порты заняты, измени `POSTGRES_PORT`, `MLFLOW_PORT`, `AIRFLOW_PORT` в `.env`.
